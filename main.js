@@ -3,15 +3,18 @@ import bluebird from 'bluebird'
 import fs from 'fs'
 import iconv from 'iconv-lite'
 import path from 'path'
-import {Cookie, Host, pages, page_base} from './config.js'
+import {Cookie, Host, pages, page_base, Home} from './config.js'
+import urlUtil from 'url'
 bluebird.promisifyAll(fs)
 
 const PATHS = {
   main: path.join(__dirname, './output')
 }
 PATHS.pages = path.join(PATHS.main, 'pages')
-PATHS.articles_json = path.join(PATHS.main, 'articles.json')
+PATHS.articlesJson = path.join(PATHS.main, 'articles.json')
 PATHS.articles = path.join(PATHS.main, 'articles')
+PATHS.imagesJson = path.join(PATHS.main, 'images.json')
+PATHS.images = path.join(PATHS.main, 'images')
 
 //basic
 const jarWithCookie = request.jar()
@@ -47,14 +50,17 @@ const matchAll = (regex, data) => {
   return out
 }
 
+const mkdir = async dir=>{
+  let exists = await fs.existsSync(dir)
+  if(!exists) return fs.mkdirAsync(dir)
+}
 
 // steps
 const mkdirInitialized = async () => {
-  let all = ['main', 'pages', 'articles']
+  let all = ['main', 'pages', 'articles', 'images']
   for (let i = 0; i < all.length; i++) {
     let dir = PATHS[all[i]]
-    let exists = await fs.existsSync(dir)
-    if(!exists) await fs.mkdirAsync(dir)
+    await mkdir(dir)
   }
 }
 
@@ -83,26 +89,69 @@ const parsePages = async () => {
       return {
         id: ar[0],
         date: ar[2],
-        url: path.join(page_base, urlRegex.exec(ar[1])[1]),
+        url: urlUtil.resolve(page_base, urlRegex.exec(ar[1])[1]),
         title: titleRegex.exec(ar[1])[1],
       }
     })
     json = json.concat(all)
   }
-  await fs.writeFileAsync(PATHS.articles_json, JSON.stringify(json, null, '\t'))
+  await fs.writeFileAsync(PATHS.articlesJson, JSON.stringify(json, null, '\t'))
 }
 
 const getArticles = async () => {
-  let json = await fs.readFileAsync(PATHS.articles_json, 'utf8')
+  let json = await fs.readFileAsync(PATHS.articlesJson, 'utf8')
   json = JSON.parse(json)
-  if(true){
-    let url = json[0].url
-    console.info(url);
+  for (var i = 0; i < json.length; i++) {
+    let articleMessage = json[i]
+    let url = articleMessage.url
     let article = await requestBuffer(url)
-    console.info(article);
     article = iconv.decode(article, 'GBK')
-    await sleep(200)
-    // console.info(article);
+    let filename = 1000 + i +'.html'
+    articleMessage.localFileName = filename
+    await fs.writeFileAsync(path.join(PATHS.articles, filename), article)
+    console.info(`ok with ${articleMessage.title}. ${i}/${json.length}`)
+    await sleep(800)
+  }
+  await fs.writeFileAsync(PATHS.articlesJson, JSON.stringify(json, null, '\t'))
+}
+
+const parseImagesUrls = async () => {
+  let contentRegex = /<font class=news><div class=news>([\s\S]*?)<\/div><\/font>/
+  let imgRegex = /<img .*? border=0 src="(.*?)">/g
+  let filenames = await fs.readdirAsync(PATHS.articles)
+  let out = []
+  for (let i = 0; i < filenames.length; i++) {
+    let filePath = path.join(PATHS.articles, filenames[i])
+    let article = await fs.readFileAsync(filePath, 'utf8')
+    let content = contentRegex.exec(article)[1]
+    let allImage = matchAll(imgRegex, content).map(m=>urlUtil.resolve(Home, m[1]))
+    out = out.concat(allImage)
+  }
+  await fs.writeFileAsync(PATHS.imagesJson, JSON.stringify(out, null, '\t'))
+}
+
+const downloadImages = async () => {
+  let json = await fs.readFileAsync(PATHS.imagesJson, 'utf8')
+  json = JSON.parse(json)
+  for (var i = 75; i < json.length; i++) {
+    let url = json[i]
+    let buffer = await requestBuffer(json[i])
+    let filePath
+    if(url.startsWith(Home))
+      filePath = url.replace(Home, '')
+    else{
+      let splits = url.split('/')
+      filePath = splits[splits.length - 1]
+    }
+    let realFilePath = PATHS.images
+    let splits = filePath.split('/')
+    while(splits.length > 1){
+      realFilePath += '/' + splits.shift()
+      await mkdir(realFilePath)
+    }
+    realFilePath += '/' + splits[0]
+    await fs.writeFileAsync(realFilePath, buffer)
+    console.info(`saved ${filePath} ${i}/${json.length}`);
   }
 }
 
@@ -110,7 +159,9 @@ const main = async () => {
   // await mkdirInitialized()
   // await getPages()
   // await parsePages()
-  await getArticles()
+  // await getArticles()
+  // await parseImagesUrls()
+  // await downloadImages()
 }
 
 main().catch(e=>console.error(e))
