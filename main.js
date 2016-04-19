@@ -3,22 +3,10 @@ import bluebird from 'bluebird'
 import fs from 'fs'
 import iconv from 'iconv-lite'
 import path from 'path'
-import {Cookie, Host, pages, page_base, Home, images_pages, images_pages_base} from './config.js'
+import {PATHS, Cookie, Host, pages, page_base, Home, images_pages, images_pages_base} from './config.js'
 import urlUtil from 'url'
+import {matchAll, mkdir} from './util.js'
 bluebird.promisifyAll(fs)
-
-const PATHS = {
-  main: path.join(__dirname, './output')
-}
-PATHS.pages = path.join(PATHS.main, 'pages')
-PATHS.articlesJson = path.join(PATHS.main, 'articles.json')
-PATHS.articles = path.join(PATHS.main, 'articles')
-PATHS.imagesJson = path.join(PATHS.main, 'images.json')
-PATHS.images = path.join(PATHS.main, 'images')
-
-PATHS.uploaded_pages = path.join(PATHS.main, 'uploaded_pages')
-PATHS.uploaded_json = path.join(PATHS.main, 'uploaded_images.json')
-PATHS.uploaded = path.join(PATHS.main, 'uploads')
 
 //basic
 const jarWithCookie = request.jar()
@@ -39,24 +27,6 @@ const sleep = time => {
   return new Promise(resolve=>{
     setTimeout(resolve, time)
   })
-}
-
-const matchAll = (regex, data) => {
-  if(!regex.global) throw 'regex should be global'
-  let match
-  let out = []
-  regex.lastIndex = 0;
-  while(true){
-    match = regex.exec(data)
-    if(!match) break
-    out.push(match)
-  }
-  return out
-}
-
-const mkdir = async dir=>{
-  let exists = await fs.existsSync(dir)
-  if(!exists) return fs.mkdirAsync(dir)
 }
 
 // steps

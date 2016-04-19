@@ -14,3 +14,21 @@ export const images_pages = []
 for (let i = 0; i < 63; i++) {
   images_pages.push(images_pages_base + (1+i))
 }
+
+
+import path from 'path'
+export const PATHS = {
+  main: path.join(__dirname, './output')
+}
+PATHS.pages = path.join(PATHS.main, 'pages')
+PATHS.articlesJson = path.join(PATHS.main, 'articles.json')
+PATHS.articles = path.join(PATHS.main, 'articles')
+PATHS.imagesJson = path.join(PATHS.main, 'images.json')
+PATHS.images = path.join(PATHS.main, 'images')
+
+PATHS.uploaded_pages = path.join(PATHS.main, 'uploaded_pages')
+PATHS.uploaded_json = path.join(PATHS.main, 'uploaded_images.json')
+PATHS.uploaded = path.join(PATHS.main, 'uploads')
+
+PATHS._articlesDb = path.join(PATHS.main, 'articles_db_')
+PATHS.articlesDb = (suf)=> PATHS._articlesDb + suf + '.json'
