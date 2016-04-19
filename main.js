@@ -92,14 +92,16 @@ const getArticles = async () => {
 
 const parseImagesUrls = async () => {
   let contentRegex = /<font class=news><div class=news>([\s\S]*?)<\/div><\/font>/
-  let imgRegex = /<img .*? border=0 src="(.*?)">/g
+  let imgRegex = /<img.*?src="([^"]*?)"(?:>|.*?border=\d>)/g
   let filenames = await fs.readdirAsync(PATHS.articles)
   let out = []
   for (let i = 0; i < filenames.length; i++) {
-    let filePath = path.join(PATHS.articles, filenames[i])
+    let filename = filenames[i]
+    if(filename.startsWith('.')) continue
+    let filePath = path.join(PATHS.articles, filename)
     let article = await fs.readFileAsync(filePath, 'utf8')
     let content = contentRegex.exec(article)[1]
-    let allImage = matchAll(imgRegex, content).map(m=>urlUtil.resolve(Home, m[1]))
+    let allImage = matchAll(imgRegex, content).map(m=>m[1]).filter(p=>p!=='').map(p=>urlUtil.resolve(Home, p))
     out = out.concat(allImage)
   }
   await fs.writeFileAsync(PATHS.imagesJson, JSON.stringify(out, null, '\t'))
@@ -152,7 +154,7 @@ const main = async () => {
   // await parsePages()
   // await getArticles()
   // await parseImagesUrls()
-  // await downloadImages(PATHS.imagesJson, PATHS.images)
+  // await downloadImages(PATHS.imagesJson, PATHS.images,400)
 
 
   //uploads

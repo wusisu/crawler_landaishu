@@ -1,3 +1,5 @@
+import fs from 'fs'
+
 export const matchAll = (regex, data) => {
   if(!regex.global) throw 'regex should be global'
   let match
