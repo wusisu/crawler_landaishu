@@ -1,3 +1,3 @@
 require('babel-core/register')
-// require('./main')
-require('./parse_articles.js')
+require('./main')
+// require('./parse_articles.js')

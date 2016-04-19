@@ -101,7 +101,10 @@ const parseImagesUrls = async () => {
     let filePath = path.join(PATHS.articles, filename)
     let article = await fs.readFileAsync(filePath, 'utf8')
     let content = contentRegex.exec(article)[1]
-    let allImage = matchAll(imgRegex, content).map(m=>m[1]).filter(p=>p!=='').map(p=>urlUtil.resolve(Home, p))
+    let allImage = matchAll(imgRegex, content)
+      .map(m=>m[1])
+      .filter(p=>p!=='' && !p.startsWith('http://'))
+      .map(p=>urlUtil.resolve(Home, p))
     out = out.concat(allImage)
   }
   await fs.writeFileAsync(PATHS.imagesJson, JSON.stringify(out, null, '\t'))
@@ -149,12 +152,12 @@ const parseUploadsImagesUrls = async ()=>{
 }
 
 const main = async () => {
-  // await mkdirInitialized()
-  // await getPages(pages, PATHS.pages)
-  // await parsePages()
-  // await getArticles()
-  // await parseImagesUrls()
-  // await downloadImages(PATHS.imagesJson, PATHS.images,400)
+  await mkdirInitialized()
+  await getPages(pages, PATHS.pages)
+  await parsePages()
+  await getArticles()
+  await parseImagesUrls()
+  await downloadImages(PATHS.imagesJson, PATHS.images)
 
 
   //uploads
