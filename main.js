@@ -3,7 +3,7 @@ import bluebird from 'bluebird'
 import fs from 'fs'
 import iconv from 'iconv-lite'
 import path from 'path'
-import {Cookie, Host, pages, page_base, Home} from './config.js'
+import {Cookie, Host, pages, page_base, Home, images_pages, images_pages_base} from './config.js'
 import urlUtil from 'url'
 bluebird.promisifyAll(fs)
 
@@ -15,6 +15,10 @@ PATHS.articlesJson = path.join(PATHS.main, 'articles.json')
 PATHS.articles = path.join(PATHS.main, 'articles')
 PATHS.imagesJson = path.join(PATHS.main, 'images.json')
 PATHS.images = path.join(PATHS.main, 'images')
+
+PATHS.uploaded_pages = path.join(PATHS.main, 'uploaded_pages')
+PATHS.uploaded_json = path.join(PATHS.main, 'uploaded_images.json')
+PATHS.uploaded = path.join(PATHS.main, 'uploads')
 
 //basic
 const jarWithCookie = request.jar()
@@ -57,18 +61,19 @@ const mkdir = async dir=>{
 
 // steps
 const mkdirInitialized = async () => {
-  let all = ['main', 'pages', 'articles', 'images']
+  let all = ['main', 'pages', 'articles', 'images', 'uploaded_pages', 'uploaded']
   for (let i = 0; i < all.length; i++) {
     let dir = PATHS[all[i]]
     await mkdir(dir)
   }
 }
 
-const getPages = async () => {
-  for (var i = 0; i < pages.length; i++) {
-    let page = await requestBuffer(pages[i])
+const getPages = async (urls, savePath) => {
+  for (var i = 0; i < urls.length; i++) {
+    let page = await requestBuffer(urls[i])
     page = iconv.decode(page, 'GBK')
-    await fs.writeFileAsync(path.join(PATHS.pages, 'page'+i+'.html'), page)
+    await fs.writeFileAsync(path.join(savePath, 'page'+i+'.html'), page)
+    console.info(`save page ${i}/${urls.length}`);
   }
 }
 
@@ -130,10 +135,10 @@ const parseImagesUrls = async () => {
   await fs.writeFileAsync(PATHS.imagesJson, JSON.stringify(out, null, '\t'))
 }
 
-const downloadImages = async () => {
-  let json = await fs.readFileAsync(PATHS.imagesJson, 'utf8')
+const downloadImages = async (jsonPath, savePath, startIndex=0) => {
+  let json = await fs.readFileAsync(jsonPath, 'utf8')
   json = JSON.parse(json)
-  for (var i = 75; i < json.length; i++) {
+  for (var i = startIndex; i < json.length; i++) {
     let url = json[i]
     let buffer = await requestBuffer(json[i])
     let filePath
@@ -143,7 +148,7 @@ const downloadImages = async () => {
       let splits = url.split('/')
       filePath = splits[splits.length - 1]
     }
-    let realFilePath = PATHS.images
+    let realFilePath = savePath
     let splits = filePath.split('/')
     while(splits.length > 1){
       realFilePath += '/' + splits.shift()
@@ -155,13 +160,35 @@ const downloadImages = async () => {
   }
 }
 
+// images that uploaded.
+const parseUploadsImagesUrls = async ()=>{
+  let contentRegex = /<table.*?bordercolor=#3361CA>([\s\S]*?)<\/table>/
+  let imgRegex = /<img border=0 src=(.*?) /g
+  let filenames = await fs.readdirAsync(PATHS.uploaded_pages)
+  let out = []
+  for (let i = 0; i < filenames.length; i++) {
+    let filePath = path.join(PATHS.uploaded_pages, filenames[i])
+    let page = await fs.readFileAsync(filePath, 'utf8')
+    let content = contentRegex.exec(page)[1]
+    let allImage = matchAll(imgRegex, content).map(m=>urlUtil.resolve(images_pages_base, m[1]))
+    out = out.concat(allImage)
+  }
+  await fs.writeFileAsync(PATHS.uploaded_json, JSON.stringify(out, null, '\t'))
+}
+
 const main = async () => {
   // await mkdirInitialized()
-  // await getPages()
+  // await getPages(pages, PATHS.pages)
   // await parsePages()
   // await getArticles()
   // await parseImagesUrls()
-  // await downloadImages()
+  // await downloadImages(PATHS.imagesJson, PATHS.images)
+
+
+  //uploads
+  // await getPages(images_pages, PATHS.uploaded_pages)
+  // await parseUploadsImagesUrls()
+  // downloadImages(PATHS.uploaded_json, PATHS.uploaded, 1119)
 }
 
 main().catch(e=>console.error(e))

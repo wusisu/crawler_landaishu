@@ -12,5 +12,5 @@ for (let i = 0; i < 8; i++) {
 export const images_pages_base = Home + 'manage/picture_list.asp?id=4175&whatid=0&page='
 export const images_pages = []
 for (let i = 0; i < 63; i++) {
-  images_pages.push(page_base + (1+i))
+  images_pages.push(images_pages_base + (1+i))
 }
