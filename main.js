@@ -153,11 +153,17 @@ const parseUploadsImagesUrls = async ()=>{
 
 const main = async () => {
   await mkdirInitialized()
+  console.log('ok init')
   await getPages(pages, PATHS.pages)
+  console.log('ok pages')
   await parsePages()
+  console.log('ok article list')
   await getArticles()
+  console.log('ok articles')
   await parseImagesUrls()
+  console.log('ok image list')
   await downloadImages(PATHS.imagesJson, PATHS.images)
+  console.log('ok images')
 
 
   //uploads
