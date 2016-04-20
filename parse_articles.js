@@ -96,9 +96,9 @@ const genPost = async ()=>{
 }
 
 const main = async ()=>{
-  // await extractArticles()
+  await extractArticles()
   await cleanupData()
-  // await genPost()
+  await genPost()
 }
 
 main().catch(e=>console.error(e))
