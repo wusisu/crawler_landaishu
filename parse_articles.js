@@ -1,4 +1,4 @@
-import {PATHS} from './config.js'
+import {PATHS, DEPLOY_ROOT} from './config.js'
 import {matchAll, mkdir} from './util.js'
 import path from 'path'
 import fs from 'fs'
@@ -44,7 +44,7 @@ const cleanupData = async () => {
   })
   let cs = json.map(a=>a.content)
   cs = cs.map(c=>c
-    .replace(/<img.*?src="([^"]*?)"(?:>|.*?border=\d>)/g, '\n![]($1)')
+    .replace(/<img.*?src="([^"]*?)"(?:>|.*?border=\d>)/g, `\n![](${DEPLOY_ROOT}$1)`)
     .replace(/<[Aa] target=_blank href="(.*?)">(.*?)<\/[aA]>/g, '[$2]($1)')
     .replace(/<\?xml[^>]*?\/>/g,'')
     .replace(/<[pP][^>]*?>([\s\S]*?)<\/[pP]>/g,'\n$1')
@@ -97,8 +97,8 @@ const genPost = async ()=>{
 
 const main = async ()=>{
   // await extractArticles()
-  // await cleanupData()
-  await genPost()
+  await cleanupData()
+  // await genPost()
 }
 
 main().catch(e=>console.error(e))
