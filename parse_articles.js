@@ -90,7 +90,7 @@ const genPost = async ()=>{
     let post = `---\nlayout: post\ntitle: ${a.title}\ndate: ${a.date.replace(/-/g,'/')}\ncategories: ${a.category}\n---\n\n`
     post += `-[文章曾发布于蓝袋鼠](${a.url})-\n\n\n`
     post += a.content
-    await fs.writeFileAsync(path.join(postPath, `${a.title}.md`), post)
+    await fs.writeFileAsync(path.join(postPath, `${a.date}-${a.title}.md`), post)
   }
 
 }
